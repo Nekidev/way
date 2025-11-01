@@ -4,3 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+clap = { version = "4.5.51", features = ["env", "derive"] }
+log = "0.4.28"
+pretty-logging = "0.2.0"
+smithay-client-toolkit = "0.20.0"
+thiserror = "2.0.17"
+tokio = { version = "1.48.0", features = ["rt-multi-thread", "macros", "net", "io-util"] }
+tokio-byteorder = "0.3.0"
+wayland-client = "0.31.11"
