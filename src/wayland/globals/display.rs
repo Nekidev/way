@@ -1,13 +1,15 @@
-use crate::wayland::messages::{IntoMessage, Message};
+use std::sync::Arc;
 
-pub struct GetRegistryRequest;
+use crate::wayland::connection::Connection;
 
-impl IntoMessage for GetRegistryRequest {
-    fn into_message(self, id_generator: impl Fn() -> u32) -> Message {
-        Message {
-            object_id: 1,
-            opcode: 0,
-            arguments: id_generator().to_le_bytes().to_vec(),
-        }
+pub struct Display {
+    conn: Arc<Connection>,
+}
+
+impl Display {
+    pub async fn sync(&self) {
+        self.conn.recv_raw();
     }
 }
+
+struct DisplaySyncRequest;

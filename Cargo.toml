@@ -12,3 +12,4 @@ thiserror = "2.0.17"
 tokio = { version = "1.48.0", features = ["rt-multi-thread", "macros", "net", "io-util"] }
 tokio-byteorder = "0.3.0"
 wayland-client = "0.31.11"
+withfd = { version = "0.2.1", features = ["tokio"] }

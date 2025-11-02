@@ -28,14 +28,12 @@
 //! * [`ConnectionError::MessageError`] - Indicates that there was an error while sending a Wayland
 //!   message.
 
-use std::{
-    env::VarError,
-    sync::atomic::{AtomicU32, Ordering},
-};
+use std::env::VarError;
 
 use tokio::net::UnixStream;
+use withfd::{WithFd, WithFdExt};
 
-use crate::wayland::messages::{IntoMessage, MessageError};
+use crate::wayland::messages::{MessageError, RawMessage};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConnectionError {
@@ -56,8 +54,7 @@ pub enum ConnectionError {
 ///
 /// Initialize a new connection using [`Connection::from_env()`].
 pub struct Connection {
-    stream: UnixStream,
-    id_counter: AtomicU32,
+    stream: WithFd<UnixStream>,
 }
 
 impl Connection {
@@ -78,36 +75,19 @@ impl Connection {
         let socket_path = if wayland_display.starts_with("/") {
             wayland_display
         } else {
-            format!(
-                "{}/{}",
-                std::env::var("XDG_RUNTIME_DIR")?,
-                std::env::var("WAYLAND_DISPLAY").unwrap_or("wayland-0".to_string())
-            )
+            format!("{}/{}", std::env::var("XDG_RUNTIME_DIR")?, wayland_display)
         };
 
-        let stream = UnixStream::connect(socket_path).await?;
+        let stream = UnixStream::connect(socket_path).await?.with_fd();
 
-        Ok(Self {
-            stream,
-            id_counter: AtomicU32::new(1),
-        })
+        Ok(Self { stream })
     }
 
-    /// Sends a Wayland message to the compositor.
-    ///
-    /// Arguments:
-    /// * `message` - The message to send.
-    ///
-    /// Returns:
-    /// * `Ok(())` - The message was sent successfully.
-    /// * `Err(ConnectionError)` - An error occurred while sending the message.
-    pub async fn send(&mut self, message: impl IntoMessage) -> Result<(), ConnectionError> {
-        let message = message.into_message(|| self.id_counter.fetch_add(1, Ordering::SeqCst));
-
-        message.write(&mut self.stream).await?;
-
-        Ok(())
+    pub async fn recv_raw(&mut self) -> Result<RawMessage, MessageError> {
+        RawMessage::read(&mut self.stream).await
     }
+
+    pub async fn recv_fd(&mut self) {}
 }
 
 #[cfg(test)]
