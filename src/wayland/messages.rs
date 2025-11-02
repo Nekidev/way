@@ -681,3 +681,23 @@ impl ArgumentsDecoder for Vec<ValueType> {
         Ok(values)
     }
 }
+
+pub trait ArgumentEncoder {
+    /// Encodes an arguments list into a bytes vector.
+    /// 
+    /// Returns:
+    /// * [`Vec<u8>`] - The encoded byte vector.
+    fn encode(&self) -> Vec<u8>;
+}
+
+impl ArgumentEncoder for Vec<Value> {
+    fn encode(&self) -> Vec<u8> {
+        let mut vec = Vec::new();
+
+        for item in self {
+            vec.extend(item.encode());
+        }
+
+        vec
+    }
+}
